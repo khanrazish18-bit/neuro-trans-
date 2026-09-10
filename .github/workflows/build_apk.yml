@@ -1,0 +1,47 @@
+name: Build Flutter APK From Zip
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 1. یہ کمانڈ آپ کی زپ فائل کو اوپن (unzip) کرے گی
+      - name: Unzip project files
+        run: unzip neuro-trans-app.zip -d extracted_app
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 2. یہاں "extracted_app" فولڈر کے اندر جا کر ڈیپینڈینسیز انسٹال ہوں گی
+      - name: Install dependencies
+        run: |
+          cd extracted_app
+          flutter pub get
+
+      # 3. یہ کمانڈ اسی فولڈر کے اندر جا کر APK تیار کرے گی
+      - name: Build APK
+        run: |
+          cd extracted_app
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: extracted_app/build/app/outputs/flutter-apk/app-release.apk
